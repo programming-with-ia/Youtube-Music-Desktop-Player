@@ -1,5 +1,6 @@
 import sys
 import logging
+from typing import TYPE_CHECKING
 
 import pywinstyles
 from PyQt5.QtCore import Qt, QProcess
@@ -8,10 +9,15 @@ from PyQt5.QtWidgets import QDialog, QApplication
 from PyQt5.uic import loadUi
 from qfluentwidgets import MessageBox
 
+
+if TYPE_CHECKING:
+    from core.main_window import MainWindow
+
+
 class SettingsDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.window = parent
+        self.window: "MainWindow" = parent
 
         self.load_ui()
         self.setup_content()
@@ -33,30 +39,30 @@ class SettingsDialog(QDialog):
         self.ComboBox_3.addItems(self.opengl_enviroments)
 
     def setup_settings(self):
-        self.SwitchButton.setChecked(self.window.save_last_win_geometry_setting)
-        self.SwitchButton_4.setChecked(self.window.open_last_url_at_startup_setting)
-        self.SwitchButton_3.setChecked(self.window.ad_blocker_setting)
-        self.SwitchButton_5.setChecked(self.window.fullscreen_mode_support_setting)
-        self.SwitchButton_6.setChecked(self.window.support_animated_scrolling_setting)
-        self.SwitchButton_2.setChecked(self.window.save_last_pos_of_mp_setting)
-        self.SwitchButton_8.setChecked(self.window.save_last_zoom_factor_setting)
-        self.SwitchButton_7.setChecked(self.window.discord_rpc_setting)
-        self.SwitchButton_11.setChecked(self.window.win_thumbmail_buttons_setting)
-        self.SwitchButton_12.setChecked(self.window.tray_icon_setting)
-        self.ComboBox.setCurrentIndex(self.proxy_types.index(self.window.proxy_type_setting))
+        self.SwitchButton.setChecked(self.window.app_settings.save_last_win_geometry)
+        self.SwitchButton_4.setChecked(self.window.app_settings.open_last_url_at_startup)
+        self.SwitchButton_3.setChecked(self.window.app_settings.ad_blocker)
+        self.SwitchButton_5.setChecked(self.window.app_settings.fullscreen_mode_support)
+        self.SwitchButton_6.setChecked(self.window.app_settings.support_animated_scrolling)
+        self.SwitchButton_2.setChecked(self.window.app_settings.save_last_pos_of_mp)
+        self.SwitchButton_8.setChecked(self.window.app_settings.save_last_zoom_factor)
+        self.SwitchButton_7.setChecked(self.window.app_settings.discord_rpc)
+        self.SwitchButton_11.setChecked(self.window.app_settings.win_thumbmail_buttons)
+        self.SwitchButton_12.setChecked(self.window.app_settings.tray_icon)
+        self.ComboBox.setCurrentIndex(self.proxy_types.index(self.window.app_settings.proxy_type))
         self.toggle_proxy_config()
-        if self.window.proxy_host_name_setting is not None:
-            self.LineEdit.setText(self.window.proxy_host_name_setting)
-        if self.window.proxy_port_setting is not None:
-            self.LineEdit_2.setText(str(self.window.proxy_port_setting))
-        if self.window.proxy_login_setting is not None:
-            self.LineEdit_3.setText(self.window.proxy_login_setting)
-        if self.window.proxy_password_setting is not None:
-            self.PasswordLineEdit.setText(self.window.proxy_password_setting)
-        self.SwitchButton_13.setChecked(self.window.track_change_notificator_setting)
-        self.SwitchButton_14.setChecked(self.window.hotkey_playback_control_setting)
-        self.SwitchButton_15.setChecked(self.window.only_audio_mode_setting)
-        self.ComboBox_3.setCurrentIndex(self.opengl_enviroments.index(self.window.opengl_enviroment_setting))
+        if self.window.app_settings.proxy_host_name is not None:
+            self.LineEdit.setText(self.window.app_settings.proxy_host_name)
+        if self.window.app_settings.proxy_port is not None:
+            self.LineEdit_2.setText(str(self.window.app_settings.proxy_port))
+        if self.window.app_settings.proxy_login is not None:
+            self.LineEdit_3.setText(self.window.app_settings.proxy_login)
+        if self.window.app_settings.proxy_password is not None:
+            self.PasswordLineEdit.setText(self.window.app_settings.proxy_password)
+        self.SwitchButton_13.setChecked(self.window.app_settings.track_change_notificator)
+        self.SwitchButton_14.setChecked(self.window.app_settings.hotkey_playback_control)
+        self.SwitchButton_15.setChecked(self.window.app_settings.only_audio_mode)
+        self.ComboBox_3.setCurrentIndex(self.opengl_enviroments.index(self.window.app_settings.opengl_enviroment))
 
         self.check_if_settings_changed()
 
@@ -112,46 +118,26 @@ class SettingsDialog(QDialog):
             QProcess.startDetached(sys.executable, sys.argv)
 
     def save_and_close(self):
-        self.window.save_last_win_geometry_setting = int(self.SwitchButton.isChecked())
-        self.window.open_last_url_at_startup_setting = int(self.SwitchButton_4.isChecked())
-        self.window.ad_blocker_setting = int(self.SwitchButton_3.isChecked())
-        self.window.fullscreen_mode_support_setting = int(self.SwitchButton_5.isChecked())
-        self.window.support_animated_scrolling_setting = int(self.SwitchButton_6.isChecked())
-        self.window.save_last_pos_of_mp_setting = int(self.SwitchButton_2.isChecked())
-        self.window.save_last_zoom_factor_setting = int(self.SwitchButton_8.isChecked())
-        self.window.discord_rpc_setting = int(self.SwitchButton_7.isChecked())
-        self.window.win_thumbmail_buttons_setting = int(self.SwitchButton_11.isChecked())
-        self.window.tray_icon_setting = int(self.SwitchButton_12.isChecked())
-        self.window.proxy_type_setting = self.ComboBox.currentText()
-        self.window.proxy_host_name_setting = self.LineEdit.text()
+        self.window.app_settings.save_last_win_geometry = int(self.SwitchButton.isChecked())
+        self.window.app_settings.open_last_url_at_startup = int(self.SwitchButton_4.isChecked())
+        self.window.app_settings.ad_blocker = int(self.SwitchButton_3.isChecked())
+        self.window.app_settings.fullscreen_mode_support = int(self.SwitchButton_5.isChecked())
+        self.window.app_settings.support_animated_scrolling = int(self.SwitchButton_6.isChecked())
+        self.window.app_settings.save_last_pos_of_mp = int(self.SwitchButton_2.isChecked())
+        self.window.app_settings.save_last_zoom_factor = int(self.SwitchButton_8.isChecked())
+        self.window.app_settings.discord_rpc = int(self.SwitchButton_7.isChecked())
+        self.window.app_settings.win_thumbmail_buttons = int(self.SwitchButton_11.isChecked())
+        self.window.app_settings.tray_icon = int(self.SwitchButton_12.isChecked())
+        self.window.app_settings.proxy_type = self.ComboBox.currentText()
+        self.window.app_settings.proxy_host_name = self.LineEdit.text()
         port_text = self.LineEdit_2.text()
-        self.window.proxy_port_setting = int(port_text) if port_text else None
-        self.window.proxy_login_setting = self.LineEdit_3.text()
-        self.window.proxy_password_setting = self.PasswordLineEdit.text()
-        self.window.track_change_notificator_setting = int(self.SwitchButton_13.isChecked())
-        self.window.hotkey_playback_control_setting = int(self.SwitchButton_14.isChecked())
-        self.window.only_audio_mode_setting = int(self.SwitchButton_15.isChecked())
-        self.window.opengl_enviroment_setting = self.ComboBox_3.currentText()
-
-        self.window.settings_.setValue("save_last_win_geometry", self.window.save_last_win_geometry_setting)
-        self.window.settings_.setValue("open_last_url_at_startup", self.window.open_last_url_at_startup_setting)
-        self.window.settings_.setValue("ad_blocker", self.window.ad_blocker_setting)
-        self.window.settings_.setValue("fullscreen_mode_support", self.window.fullscreen_mode_support_setting)
-        self.window.settings_.setValue("support_animated_scrolling", self.window.support_animated_scrolling_setting)
-        self.window.settings_.setValue("save_last_pos_of_mp", self.window.save_last_pos_of_mp_setting)
-        self.window.settings_.setValue("save_last_zoom_factor", self.window.save_last_zoom_factor_setting)
-        self.window.settings_.setValue("discord_rpc", self.window.discord_rpc_setting)
-        self.window.settings_.setValue("win_thumbmail_buttons", self.window.win_thumbmail_buttons_setting)
-        self.window.settings_.setValue("tray_icon", self.window.tray_icon_setting)
-        self.window.settings_.setValue("proxy_type", self.window.proxy_type_setting)
-        self.window.settings_.setValue("proxy_host_name", self.window.proxy_host_name_setting)
-        self.window.settings_.setValue("proxy_port", self.window.proxy_port_setting)
-        self.window.settings_.setValue("proxy_login", self.window.proxy_login_setting)
-        self.window.settings_.setValue("proxy_password", self.window.proxy_password_setting)
-        self.window.settings_.setValue("track_change_notificator", self.window.track_change_notificator_setting)
-        self.window.settings_.setValue("hotkey_playback_control", self.window.hotkey_playback_control_setting)
-        self.window.settings_.setValue("only_audio_mode", self.window.only_audio_mode_setting)
-        self.window.settings_.setValue("opengl_enviroment", self.window.opengl_enviroment_setting)
+        self.window.app_settings.proxy_port = int(port_text) if port_text else None
+        self.window.app_settings.proxy_login = self.LineEdit_3.text()
+        self.window.app_settings.proxy_password = self.PasswordLineEdit.text()
+        self.window.app_settings.track_change_notificator = int(self.SwitchButton_13.isChecked())
+        self.window.app_settings.hotkey_playback_control = int(self.SwitchButton_14.isChecked())
+        self.window.app_settings.only_audio_mode = int(self.SwitchButton_15.isChecked())
+        self.window.app_settings.opengl_enviroment = self.ComboBox_3.currentText()
 
         self.close()
 

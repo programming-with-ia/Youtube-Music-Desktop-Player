@@ -9,7 +9,7 @@ from PyQt5.QtGui import QIcon, QKeySequence
 from PyQt5.QtNetwork import QNetworkProxy
 from PyQt5.QtWebChannel import QWebChannel
 from PyQt5.QtWebEngineWidgets import QWebEnginePage, QWebEngineSettings, QWebEngineScript
-from PyQt5.QtWidgets import QApplication, QDesktopWidget, QFileDialog, QMainWindow, QShortcut
+from PyQt5.QtWidgets import QApplication, QFileDialog, QMainWindow, QShortcut
 from PyQt5.QtWinExtras import QWinThumbnailToolBar, QWinThumbnailToolButton
 from PyQt5.uic import loadUi
 from qfluentwidgets import (
@@ -28,10 +28,12 @@ from core.web_channel_backend import WebChannelBackend
 from core.web_engine_page import WebEnginePage
 from core.web_engine_view import WebEngineView
 from core.ytmusic_downloader import DownloadThread
+from core.heplers import Helper
+from core.settings import AppSettings
 
 class MainWindow(QMainWindow):
     oauth_completed = pyqtSignal()
-    def __init__(self, app_settings, opengl_enviroment_setting, app_info, parent=None):
+    def __init__(self, qsettings, app_info, parent=None):
         super().__init__(parent)
         self.name = app_info[0]
         self.version = app_info[1]
@@ -49,10 +51,9 @@ class MainWindow(QMainWindow):
         self.like_status = None
         self.current_time = "NaN"
         self.total_time = "NaN"
-        self.settings_ = app_settings
-        self.opengl_enviroment_setting = opengl_enviroment_setting
-    
-        self.load_settings()
+        self.settings_ = qsettings
+        self.app_settings = AppSettings.load_setting(self.settings_)
+
         self.load_ui()
         self.setup_shortcuts()
         self.show_splash_screen()
@@ -61,81 +62,6 @@ class MainWindow(QMainWindow):
         self.create_menu()
         self.create_toolbar()
         self.activate_plugins()
-
-    def load_settings(self):
-        if self.settings_.value("ad_blocker") is None:
-            self.settings_.setValue("ad_blocker", 1)
-        if self.settings_.value("save_last_win_geometry") is None:
-            self.settings_.setValue("save_last_win_geometry", 1)
-        if self.settings_.value("open_last_url_at_startup") is None:
-            self.settings_.setValue("open_last_url_at_startup", 1)
-        if self.settings_.value("last_url") is None:
-            self.settings_.setValue("last_url", "https://music.youtube.com/")
-        if self.settings_.value("fullscreen_mode_support") is None:
-            self.settings_.setValue("fullscreen_mode_support", 1)
-        if self.settings_.value("support_animated_scrolling") is None:
-            self.settings_.setValue("support_animated_scrolling", 0)
-        if self.settings_.value("save_last_pos_of_mp") is None:
-            self.settings_.setValue("save_last_pos_of_mp", 1)
-        if self.settings_.value("last_win_geometry") is None:
-            self.settings_.setValue("last_win_geometry", QRect(self.get_centered_geometry(1000, 580)))
-        if self.settings_.value("save_last_zoom_factor") is None:
-            self.settings_.setValue("save_last_zoom_factor", 1)
-        if self.settings_.value("last_zoom_factor") is None:
-            self.settings_.setValue("last_zoom_factor", 1.0)
-        if self.settings_.value("last_download_folder") is None:
-            self.settings_.setValue("last_download_folder", self.current_dir)
-        if self.settings_.value("discord_rpc") is None:
-            self.settings_.setValue("discord_rpc", 0)
-        if self.settings_.value("save_geometry_of_mp") is None:
-            self.settings_.setValue("save_geometry_of_mp", 1)
-        if self.settings_.value("geometry_of_mp") is None:
-            self.settings_.setValue("geometry_of_mp", QRect(self.get_centered_geometry(360, 150)))
-        if self.settings_.value("win_thumbmail_buttons") is None:
-            self.settings_.setValue("win_thumbmail_buttons", 1)
-        if self.settings_.value("tray_icon") is None:
-            self.settings_.setValue("tray_icon", 1)
-        if self.settings_.value("proxy_type") is None:
-            self.settings_.setValue("proxy_type", "NoProxy")
-        if self.settings_.value("proxy_host_name") is None:
-            self.settings_.setValue("proxy_host_name", "")
-        if self.settings_.value("proxy_port") is None:
-            self.settings_.setValue("proxy_port", "")
-        if self.settings_.value("proxy_login") is None:
-            self.settings_.setValue("proxy_login", "")
-        if self.settings_.value("proxy_password") is None:
-            self.settings_.setValue("proxy_password", "")
-        if self.settings_.value("track_change_notificator") is None:
-            self.settings_.setValue("track_change_notificator", 0)
-        if self.settings_.value("hotkey_playback_control") is None:
-            self.settings_.setValue("hotkey_playback_control", 1)
-        if self.settings_.value("only_audio_mode") is None:
-            self.settings_.setValue("only_audio_mode", 0)
-
-        self.ad_blocker_setting = int(self.settings_.value("ad_blocker"))
-        self.save_last_win_geometry_setting = int(self.settings_.value("save_last_win_geometry"))
-        self.open_last_url_at_startup_setting = int(self.settings_.value("open_last_url_at_startup"))
-        self.last_url_setting = self.settings_.value("last_url")
-        self.fullscreen_mode_support_setting = int(self.settings_.value("fullscreen_mode_support"))
-        self.support_animated_scrolling_setting = int(self.settings_.value("support_animated_scrolling"))
-        self.save_last_pos_of_mp_setting = int(self.settings_.value("save_last_pos_of_mp"))
-        self.last_win_geometry_setting = self.settings_.value("last_win_geometry")
-        self.save_last_zoom_factor_setting = int(self.settings_.value("save_last_zoom_factor"))
-        self.last_zoom_factor_setting = float(self.settings_.value("last_zoom_factor"))
-        self.last_download_folder_setting = self.settings_.value("last_download_folder")
-        self.discord_rpc_setting = int(self.settings_.value("discord_rpc"))
-        self.save_geometry_of_mp_setting = int(self.settings_.value("save_geometry_of_mp"))
-        self.geometry_of_mp_setting = self.settings_.value("geometry_of_mp")
-        self.win_thumbmail_buttons_setting = int(self.settings_.value("win_thumbmail_buttons"))
-        self.tray_icon_setting = int(self.settings_.value("tray_icon"))
-        self.proxy_type_setting = self.settings_.value("proxy_type")
-        self.proxy_host_name_setting = self.settings_.value("proxy_host_name")
-        self.proxy_port_setting = self.settings_.value("proxy_port")
-        self.proxy_login_setting = self.settings_.value("proxy_login")
-        self.proxy_password_setting = self.settings_.value("proxy_password")
-        self.track_change_notificator_setting = int(self.settings_.value("track_change_notificator"))
-        self.hotkey_playback_control_setting = int(self.settings_.value("hotkey_playback_control"))
-        self.only_audio_mode_setting = int(self.settings_.value("only_audio_mode"))
 
     def load_ui(self):
         try:
@@ -153,13 +79,8 @@ class MainWindow(QMainWindow):
         if self.save_last_win_geometry_setting == 1:
             self.setGeometry(self.last_win_geometry_setting)
         else:
-            self.setGeometry(self.get_centered_geometry(1000, 560))
+            self.setGeometry(Helper.get_centered_geometry(1000, 560))
 
-    def get_centered_geometry(self, width, height):
-        screen_geometry = QDesktopWidget().screenGeometry()
-        x = (screen_geometry.width() - width) // 2 
-        y = (screen_geometry.height() - height) // 2
-        return QRect(x, y, width, height)
 
     def show_splash_screen(self):
         self.splash_screen = SplashScreen(self.windowIcon(), self)
@@ -657,7 +578,7 @@ class MainWindow(QMainWindow):
         self.activate_only_audio()
 
     def activate_ad_blocker(self):
-        if self.ad_blocker_setting == 1:
+        if self.app_settings.ad_blocker == 1:
             ad_blocker_plugin = QWebEngineScript()
             ad_blocker_plugin.setName("AdBlocker")
             ad_blocker_plugin.setSourceCode(self.read_script("ad_blocker.js"))
@@ -815,8 +736,7 @@ class MainWindow(QMainWindow):
         if not download_folder:
             return
 
-        self.last_download_folder_setting = download_folder
-        self.settings_.setValue("last_download_folder", download_folder)
+        self.app_settings.last_download_folder = download_folder
 
         self.is_downloading = True
         self.update_download_buttons_state(self.is_downloading)
@@ -955,16 +875,13 @@ class MainWindow(QMainWindow):
         self.webpage.triggerAction(QWebEnginePage.Paste)
 
     def save_settings(self):
-        if self.save_last_zoom_factor_setting == 1:
-            self.last_zoom_factor_setting = self.webview.zoomFactor()
-            self.settings_.setValue("last_zoom_factor", self.last_zoom_factor_setting)
-        if self.save_last_win_geometry_setting == 1:
+        if self.app_settings.save_last_zoom_factor == 1:
+            self.app_settings.last_zoom_factor = self.webview.zoomFactor()
+        if self.app_settings.save_last_win_geometry == 1:
             if not self.isMaximized() and not self.isFullScreen():
-                self.last_win_geometry_setting = self.geometry()
-                self.settings_.setValue("last_win_geometry", self.last_win_geometry_setting)
+                self.app_settings.last_win_geometry = self.geometry()
         if self.current_url is not None:
-            self.last_url_setting = self.current_url
-            self.settings_.setValue("last_url", self.last_url_setting)
+            self.app_settings.last_url = self.current_url
 
     def show_window(self):
         if self.isMinimized() or self.isHidden():

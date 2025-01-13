@@ -9,6 +9,8 @@ from PyQt5.QtCore import Qt, QSettings
 from PyQt5.QtWidgets import QApplication
 
 from core.main_window import MainWindow
+from core.settings import AppSettings
+
 
 name = "Youtube-Music-Desktop-Player"
 author = "deeffest"
@@ -41,11 +43,11 @@ def setup_logging():
 if __name__ == '__main__':
     setup_logging()
     
-    app_settings = QSettings(author, name)
-    if app_settings.value("opengl_enviroment") is None:
-        app_settings.setValue("opengl_enviroment", "Auto")
+    qsettings = QSettings(author, name)
+    # if qsettings.value("opengl_enviroment") is None:
+    #     qsettings.setValue("opengl_enviroment", "Auto")
 
-    opengl_enviroment_setting = app_settings.value("opengl_enviroment")
+    opengl_enviroment_setting = AppSettings.validate_value(qsettings.value("opengl_enviroment"))
     if opengl_enviroment_setting == "Desktop":
         os.environ["QT_OPENGL"] = "desktop"
     elif opengl_enviroment_setting == "Angle":
@@ -72,6 +74,6 @@ if __name__ == '__main__':
     except Exception as e:
         logging.error("Failed to remove Service Worker directory: " + str(e))
 
-    main_window = MainWindow(app_settings, opengl_enviroment_setting, 
+    main_window = MainWindow(qsettings, 
                              app_info=[name, version, current_dir])
     sys.exit(app.exec_())
