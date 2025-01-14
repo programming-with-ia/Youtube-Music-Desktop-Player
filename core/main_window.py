@@ -18,7 +18,6 @@ from qfluentwidgets import (
 )
 from packaging import version as pkg_version
 from win10toast import ToastNotifier
-
 from core.about_dialog import AboutDialog
 from core.mini_player_dialog import MiniPlayerDialog
 from core.settings_dialog import SettingsDialog
@@ -30,6 +29,7 @@ from core.web_engine_view import WebEngineView
 from core.ytmusic_downloader import DownloadThread
 from core.heplers import Helper
 from core.settings import AppSettings
+
 
 class MainWindow(QMainWindow):
     oauth_completed = pyqtSignal()
@@ -51,8 +51,12 @@ class MainWindow(QMainWindow):
         self.like_status = None
         self.current_time = "NaN"
         self.total_time = "NaN"
+
         self.settings_ = qsettings
-        self.app_settings = AppSettings.load_setting(self.settings_)
+        self.app_settings = AppSettings.load_setting(
+            self.settings_,
+            last_download_folder=self.current_dir,
+        )
 
         self.load_ui()
         self.setup_shortcuts()
@@ -70,17 +74,16 @@ class MainWindow(QMainWindow):
             logging.error("Failed to apply dark style: " + str(e))
         setTheme(Theme.DARK)
         setThemeColor("red")
-        
+
         loadUi(f"{self.current_dir}/core/ui/main_window.ui", self)
-        
+
         self.setWindowTitle("Youtube Music Desktop Player")
         self.setWindowIcon(QIcon(f"{self.icon_folder}/icon.ico"))
-        
-        if self.save_last_win_geometry_setting == 1:
-            self.setGeometry(self.last_win_geometry_setting)
+
+        if self.app_settings.save_last_win_geometry == 1:
+            self.setGeometry(self.app_settings.last_win_geometry)
         else:
             self.setGeometry(Helper.get_centered_geometry(1000, 560))
-
 
     def show_splash_screen(self):
         self.splash_screen = SplashScreen(self.windowIcon(), self)
@@ -96,56 +99,56 @@ class MainWindow(QMainWindow):
         self.webview.setPage(self.webpage)
 
         self.set_application_proxy()
-        
-        if self.open_last_url_at_startup_setting == 1:
-            self.webview.load(QUrl(self.last_url_setting))
+
+        if self.app_settings.open_last_url_at_startup == 1:
+            self.webview.load(QUrl(self.app_settings.last_url))
         else:
             self.home()
-            
+
         self.webview.urlChanged.connect(self.url_changed)
         self.webview.loadProgress.connect(self.load_progress)
         self.webpage.fullScreenRequested.connect(self.handle_fullscreen)
-        
-        self.websettings.setAttribute(QWebEngineSettings.FullScreenSupportEnabled, self.fullscreen_mode_support_setting)
-        self.websettings.setAttribute(QWebEngineSettings.ScrollAnimatorEnabled, self.support_animated_scrolling_setting)
-        
-        if self.save_last_zoom_factor_setting == 1:
-            self.webview.setZoomFactor(self.last_zoom_factor_setting)
-            
+
+        self.websettings.setAttribute(QWebEngineSettings.FullScreenSupportEnabled, self.app_settings.fullscreen_mode_support)
+        self.websettings.setAttribute(QWebEngineSettings.ScrollAnimatorEnabled, self.app_settings.support_animated_scrolling)
+
+        if self.app_settings.save_last_zoom_factor == 1:
+            self.webview.setZoomFactor(self.app_settings.last_zoom_factor)
+
         self.MainLayout.addWidget(self.webview)
         self.webview.setFocus()
 
     def set_application_proxy(self):
         try:
             proxy = QNetworkProxy()
-        
-            if self.proxy_type_setting == "HttpProxy":
+
+            if self.app_settings.proxy_type == "HttpProxy":
                 proxy.setType(QNetworkProxy.HttpProxy)
-            elif self.proxy_type_setting == "Socks5Proxy":
+            elif self.app_settings.proxy_type == "Socks5Proxy":
                 proxy.setType(QNetworkProxy.Socks5Proxy)
-            elif self.proxy_type_setting == "DefaultProxy":
+            elif self.app_settings.proxy_type == "DefaultProxy":
                 proxy.setType(QNetworkProxy.DefaultProxy)
                 return
             else:
                 proxy.setType(QNetworkProxy.NoProxy)
                 return
-            
-            if self.proxy_host_name_setting:
-                proxy.setHostName(self.proxy_host_name_setting)
+
+            if self.app_settings.proxy_host_name:
+                proxy.setHostName(self.app_settings.proxy_host_name)
             else:
                 raise ValueError("Proxy host name is not set.")
-            
-            if self.proxy_port_setting:
-                if not (1 <= self.proxy_port_setting <= 65535):
+
+            if self.app_settings.proxy_port:
+                if not (1 <= self.app_settings.proxy_port <= 65535):
                     raise ValueError("Proxy port is out of range (1-65535).")
-                proxy.setPort(self.proxy_port_setting)
+                proxy.setPort(self.app_settings.proxy_port)
             else:
                 raise ValueError("Proxy port is not set.")
-            
-            if self.proxy_login_setting:
-                proxy.setUser(self.proxy_login_setting)
-            if self.proxy_password_setting:
-                proxy.setPassword(self.proxy_password_setting)
+
+            if self.app_settings.proxy_login:
+                proxy.setUser(self.app_settings.proxy_login)
+            if self.app_settings.proxy_password:
+                proxy.setPassword(self.app_settings.proxy_password)
 
             QNetworkProxy.setApplicationProxy(proxy)
         except Exception as e:
@@ -159,14 +162,14 @@ class MainWindow(QMainWindow):
 
             self.splash_screen.finish()
             self.splash_screen = None
-            
+
             self.check_updates()
 
     def check_updates(self):
         self.update_checker = UpdateChecker()
         self.update_checker.update_checked.connect(self.handle_update_checked)
         self.update_checker.start()
-        
+
     def handle_update_checked(self, last_version, title, whats_new, last_release_url):
         if pkg_version.parse(self.version) < pkg_version.parse(last_version):
             msg_box = MessageBox(
@@ -215,7 +218,7 @@ class MainWindow(QMainWindow):
         else:
             self.ToolBar.show()
             self.showNormal()
-            
+
         request.accept()
 
     def url_changed(self, url):
@@ -252,7 +255,7 @@ class MainWindow(QMainWindow):
             self.like_status = None
 
         self.update_mini_player_like_dislike_controls()
-    
+
     def update_mini_player_like_dislike_controls(self):
         if self.mini_player_dialog:
             if self.like_status == "Like":
@@ -274,11 +277,11 @@ class MainWindow(QMainWindow):
         is_empty = not self.title or not self.author or not self.thumbnail_url
         window_title = "Youtube Music Desktop Player" if is_empty else f"{self.title} - Youtube Music Desktop Player"
         self.setWindowTitle(window_title)
-        
+
         if self.tray_icon:
             self.tray_icon.setToolTip(window_title)
 
-        if not is_empty and self.track_change_notificator_setting and self.track_notifier is not None:
+        if not is_empty and self.app_settings.track_change_notificator and self.track_notifier is not None:
             self.track_notifier.show_toast(
                 self.title,
                 self.author,
@@ -286,7 +289,7 @@ class MainWindow(QMainWindow):
                 icon_path=f"{self.icon_folder}/music-notify.ico",
                 threaded=True
             )
-        
+
         if is_empty:
             self.clear_discord_rpc()
         else:
@@ -366,7 +369,7 @@ class MainWindow(QMainWindow):
         self.update_tray_icon_track_controls()
 
     def update_tray_icon_track_controls(self):
-        if self.tray_icon_setting == 1 and self.tray_icon:
+        if self.app_settings.tray_icon == 1 and self.tray_icon:
             if self.video_state == "VideoPlaying":
                 self.tray_icon.previous_action.setEnabled(True)
                 self.tray_icon.play_pause_action.setIcon(QIcon(f"{self.icon_folder}/pause.png"))
@@ -382,9 +385,9 @@ class MainWindow(QMainWindow):
                 self.tray_icon.play_pause_action.setIcon(QIcon(f"{self.icon_folder}/play.png"))
                 self.tray_icon.play_pause_action.setEnabled(False)
                 self.tray_icon.next_action.setEnabled(False)
-    
+
     def update_win_thumbnail_buttons_track_controls(self):
-        if self.win_thumbmail_buttons_setting == 1 and self.win_thumbnail_toolbar:
+        if self.app_settings.win_thumbmail_buttons == 1 and self.win_thumbnail_toolbar:
             if self.video_state == "VideoPlaying":
                 self.tool_btn_previous.setIcon(QIcon(f"{self.icon_folder}/previous-filled-border.png"))
                 self.tool_btn_play_pause.setIcon(QIcon(f"{self.icon_folder}/pause-filled-border.png"))            
@@ -493,7 +496,7 @@ class MainWindow(QMainWindow):
 
         self.download_menu = RoundMenu("Download...", self)
         self.download_menu.setIcon(QIcon(f"{self.icon_folder}/download.png"))
-        
+
         self.edit_menu = RoundMenu(self)
 
         self.copy_menu = RoundMenu(self)
@@ -597,7 +600,7 @@ class MainWindow(QMainWindow):
         self.webpage.profile().scripts().insert(scrollbar_styles_plugin)
 
     def activate_discord_rpc(self):
-        if self.discord_rpc_setting == 1:
+        if self.app_settings.discord_rpc == 1:
             app_id = "1254202610781655050"
             self.discord_rpc = pypresence.Presence(app_id)
             try:
@@ -617,7 +620,7 @@ class MainWindow(QMainWindow):
         self.webpage.profile().scripts().insert(ytmusic_observer_plugin)
 
     def activate_win_thumbnail_toolbar(self):
-        if self.win_thumbmail_buttons_setting == 1:
+        if self.app_settings.win_thumbmail_buttons == 1:
             self.win_thumbnail_toolbar = QWinThumbnailToolBar(self)
             self.create_previous_button()
             self.create_play_pause_button()
@@ -651,20 +654,20 @@ class MainWindow(QMainWindow):
         self.win_thumbnail_toolbar.addButton(self.tool_btn_next)
 
     def activate_tray_icon(self):
-        if self.tray_icon_setting == 1:
+        if self.app_settings.tray_icon == 1:
             self.tray_icon = SystemTrayIcon(self.windowIcon(), self)
             self.tray_icon.show()
         else:
             self.tray_icon = None
 
     def activate_track_notifier(self):
-        if self.track_change_notificator_setting == 1:
+        if self.app_settings.track_change_notificator== 1:
             self.track_notifier = ToastNotifier()
         else:
             self.track_notifier = None
 
     def activate_yt_hotkeys(self):
-        if self.hotkey_playback_control_setting == 1:
+        if self.app_settings.hotkey_playback_control == 1:
             yt_hotkeys_script = QWebEngineScript()
             yt_hotkeys_script.setName("YtHotkeys")
             yt_hotkeys_script.setSourceCode(self.read_script("yt_hotkeys.js"))
@@ -674,7 +677,7 @@ class MainWindow(QMainWindow):
             self.webpage.profile().scripts().insert(yt_hotkeys_script)
 
     def activate_only_audio(self):
-        if self.only_audio_mode_setting == 1:
+        if self.app_settings.only_audio_mode == 1:
             only_audio_script = QWebEngineScript()
             only_audio_script.setName("OnlyAudio")
             only_audio_script.setSourceCode(self.read_script("only_audio.js"))
@@ -694,13 +697,13 @@ class MainWindow(QMainWindow):
 
     def like(self):
         self.run_js_script("like.js")
-    
+
     def dislike(self):
         self.run_js_script("dislike.js")
-        
+
     def run_js_script(self, script_name):
         self.webpage.runJavaScript(self.read_script(script_name))    
-        
+
     def read_script(self, filename):
         with open(f"{self.current_dir}/core/js/{filename}", "r", encoding='utf-8') as f:
             return f.read()
@@ -719,7 +722,7 @@ class MainWindow(QMainWindow):
 
     def select_download_folder(self, title_suffix=""):
         title = f"Select Download Folder {title_suffix}"
-        folder = QFileDialog.getExistingDirectory(self, title, self.last_download_folder_setting)
+        folder = QFileDialog.getExistingDirectory(self, title, self.app_settings.last_download_folder)
         return folder if folder else None
 
     def download(self, custom_url=None, download_folder=None, info_bar=None, use_oauth=False):
@@ -849,7 +852,7 @@ class MainWindow(QMainWindow):
     def hide_tray_icon(self):
         if self.tray_icon:
             self.tray_icon.hide()
-    
+
     def on_line_edit_return_pressed(self):
         url = self.LineEdit.text()
         self.webview.load(QUrl(url))
@@ -890,9 +893,9 @@ class MainWindow(QMainWindow):
             else:
                 self.show()
         self.activateWindow()
-        
+
     def closeEvent(self, event):
-        if self.tray_icon_setting == 1 and self.tray_icon is not None:
+        if self.app_settings.tray_icon == 1 and self.tray_icon is not None:
             if not self.force_exit:
                 self.hide()
                 event.ignore()
@@ -900,7 +903,7 @@ class MainWindow(QMainWindow):
 
         if self.video_state == "VideoPlaying":
             self.show_window()
-            
+
             msg_box = MessageBox(
                 "Exit Confirmation",
                 "Exiting now will stop the current playback and close the application.\nDo you want to exit now?",
@@ -908,7 +911,7 @@ class MainWindow(QMainWindow):
             )
             msg_box.yesButton.setText("Exit")
             msg_box.cancelButton.setText("Cancel")
-            
+
             if not msg_box.exec_():
                 self.force_exit = False
                 event.ignore()

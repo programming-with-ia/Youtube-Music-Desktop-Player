@@ -21,11 +21,11 @@ class ThumbnailLoader(QThread):
             response = requests.get(
                 self.url,
                 proxies=get_proxies(
-                    self.window.proxy_type_setting,
-                    self.window.proxy_host_name_setting,
-                    self.window.proxy_port_setting,
-                    self.window.proxy_login_setting,
-                    self.window.proxy_password_setting
+                    self.window.app_settings.proxy_type,
+                    self.window.app_settings.proxy_host_name,
+                    self.window.app_settings.proxy_port,
+                    self.window.app_settings.proxy_login,
+                    self.window.app_settings.proxy_password
                 )
             )
             response.raise_for_status()

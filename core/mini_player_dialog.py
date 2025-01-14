@@ -1,5 +1,6 @@
 import logging
 import pywinstyles
+from typing import TYPE_CHECKING
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
@@ -10,10 +11,13 @@ from qfluentwidgets import ToolTipFilter, ToolTipPosition
 from core.thumbnail_loader import ThumbnailLoader
 from core.get_taskbar_position import get_taskbar_position
 
+if TYPE_CHECKING:
+    from core.main_window import MainWindow
+
 class MiniPlayerDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.window = parent
+        self.window:MainWindow = parent
 
         self.init_ui()
         self.setup_content()
@@ -60,8 +64,8 @@ class MiniPlayerDialog(QDialog):
         self.setWindowFlags(Qt.Window)
         self.setWindowFlag(Qt.WindowStaysOnTopHint)
 
-        if self.window.save_last_pos_of_mp_setting == 1:
-            self.setGeometry(self.window.geometry_of_mp_setting)
+        if self.window.app_settings.save_last_pos_of_mp == 1:
+            self.setGeometry(self.window.app_settings.geometry_of_mp)
         else:
             screen_geometry = QDesktopWidget().screenGeometry()
             taskbar_position = get_taskbar_position()
@@ -82,9 +86,9 @@ class MiniPlayerDialog(QDialog):
             super().keyPressEvent(event)
             
     def closeEvent(self, event):
-        if self.window.save_last_pos_of_mp_setting == 1:
-            self.window.geometry_of_mp_setting = self.geometry()
-            self.window.settings_.setValue("geometry_of_mp", self.window.geometry_of_mp_setting)
+        if self.window.app_settings.save_last_pos_of_mp == 1:
+            self.window.app_settings.geometry_of_mp = self.geometry()
+            self.window.settings_.setValue("geometry_of_mp", self.window.app_settings.geometry_of_mp)
         
         self.window.show()
         self.window.show_tray_icon()

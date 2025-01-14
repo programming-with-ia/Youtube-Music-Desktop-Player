@@ -28,31 +28,27 @@ def setup_logging():
         log_file, maxBytes=5 * 1024 * 1024, backupCount=5
     )
     rotating_handler.setLevel(logging.INFO)
-    rotating_handler.setFormatter(logging.Formatter(
-        '[%(asctime)s] %(message)s', datefmt='%Y.%m.%d %H:%M:%S'
-    ))
+    rotating_handler.setFormatter(
+        logging.Formatter("[%(asctime)s] %(message)s", datefmt="%Y.%m.%d %H:%M:%S")
+    )
 
     logging.basicConfig(
-        level=logging.INFO,
-        handlers=[
-            rotating_handler,
-            logging.StreamHandler()
-        ]
+        level=logging.INFO, handlers=[rotating_handler, logging.StreamHandler()]
     )
-    
-if __name__ == '__main__':
-    setup_logging()
-    
-    qsettings = QSettings(author, name)
-    # if qsettings.value("opengl_enviroment") is None:
-    #     qsettings.setValue("opengl_enviroment", "Auto")
 
-    opengl_enviroment_setting = AppSettings.validate_value(qsettings.value("opengl_enviroment"))
-    if opengl_enviroment_setting == "Desktop":
+if __name__ == "__main__":
+    setup_logging()
+
+    qsettings = QSettings(author, name)
+
+    opengl_enviroment = AppSettings.validate_value(
+        "opengl_enviroment", qsettings.value("opengl_enviroment")
+    )
+    if opengl_enviroment == "Desktop":
         os.environ["QT_OPENGL"] = "desktop"
-    elif opengl_enviroment_setting == "Angle":
+    elif opengl_enviroment == "Angle":
         os.environ["QT_OPENGL"] = "angle"
-    elif opengl_enviroment_setting == "Software":
+    elif opengl_enviroment == "Software":
         os.environ["QT_OPENGL"] = "software"
     else:
         os.environ.pop("QT_OPENGL", None)
@@ -61,10 +57,10 @@ if __name__ == '__main__':
     app = QApplication(sys_argv)
     app.setApplicationName(name)
     app.setOrganizationName(author)
-    app.setOrganizationDomain(website)  
+    app.setOrganizationDomain(website)
     app.setAttribute(Qt.AA_DontCreateNativeWidgetSiblings)
 
-    with open(f"{current_dir}/core/css/styles.css", 'r') as file:
+    with open(f"{current_dir}/core/css/styles.css", "r") as file:
         app.setStyleSheet(file.read())
 
     username = getpass.getuser()
@@ -74,6 +70,5 @@ if __name__ == '__main__':
     except Exception as e:
         logging.error("Failed to remove Service Worker directory: " + str(e))
 
-    main_window = MainWindow(qsettings, 
-                             app_info=[name, version, current_dir])
+    main_window = MainWindow(qsettings, app_info=[name, version, current_dir])
     sys.exit(app.exec_())

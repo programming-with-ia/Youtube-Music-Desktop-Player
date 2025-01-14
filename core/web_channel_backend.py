@@ -27,7 +27,7 @@ class WebChannelBackend(QObject):
         if self.window.tray_icon:
             self.window.tray_icon.setToolTip(window_title)
 
-        if not is_empty and self.window.track_change_notificator_setting and self.window.track_notifier is not None:
+        if not is_empty and self.window.app_settings.track_change_notificator and self.window.track_notifier is not None:
             self.window.track_notifier.show_toast(
                 self.window.title,
                 self.window.author,
